@@ -1,0 +1,51 @@
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 62px;
+  background: #fff;
+  border-top: 1px solid #eef0f4;
+  box-shadow: 0 -2px 12px rgba(27, 42, 92, 0.08);
+  display: flex;
+  align-items: stretch;
+  z-index: 300;
+}
+
+.nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  text-decoration: none;
+  color: #aab0c0;
+  transition: color 0.15s;
+}
+
+.nav-item:hover { color: #0F8B8D; }
+
+.nav-item.active {
+  color: #0F8B8D;
+}
+
+.nav-icon {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.nav-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+
+/* active 탭 상단 accent 선 */
+.nav-item.active::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  /* 개별 탭 위치는 flex로 자동 배치됨 */
+}
