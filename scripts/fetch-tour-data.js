@@ -25,17 +25,30 @@ async function fetchAll(startYmd, endYmd) {
   const items = [];
   let page = 1;
   while (true) {
-    const url = `${BASE}/metcoRegnVisitrDDList?serviceKey=${KEY}&MobileOS=ETC&MobileApp=nolrugaja&startYmd=${startYmd}&endYmd=${endYmd}&numOfRows=1000&pageNo=${page}&_type=json`;
+    const url = `${BASE}/metcoRegnVisitrDDList?serviceKey=${encodeURIComponent(KEY)}&MobileOS=ETC&MobileApp=nolrugaja&startYmd=${startYmd}&endYmd=${endYmd}&numOfRows=1000&pageNo=${page}&_type=json`;
     const res = await fetch(url);
-    const data = await res.json();
+    const text = await res.text();
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      console.error(`방문자 API JSON 파싱 실패 (page ${page}):`, text.slice(0, 200));
+      break;
+    }
+    const header = data?.response?.header;
+    if (header?.resultCode !== '0000') {
+      console.error('방문자 API 오류:', header?.resultCode, header?.resultMsg);
+      break;
+    }
     const body = data.response.body;
+    const totalCount = Number(body?.totalCount ?? 0);
     const chunk = Array.isArray(body.items?.item)
       ? body.items.item
       : body.items?.item
         ? [body.items.item]
         : [];
     items.push(...chunk);
-    if (items.length >= body.totalCount) break;
+    if (items.length >= totalCount || totalCount === 0) break;
     page++;
   }
   return items;
