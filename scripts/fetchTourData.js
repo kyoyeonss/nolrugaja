@@ -13,8 +13,43 @@ notice("fetchTourData.js 실행 시작");
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = path.dirname(__filename);
 
-const RAW_KEY  = process.env.TOUR_API_KEY;
-const BASE_URL = "https://apis.data.go.kr/B551011/KorService1";
+const RAW_KEY = process.env.TOUR_API_KEY;
+
+// 시도할 엔드포인트 목록 (HTTP 500 / 인증 오류 시 순서대로 fallback)
+const ENDPOINTS = [
+  {
+    label: "KorService1/searchFestival1",
+    buildUrl: (key, page) =>
+      `https://apis.data.go.kr/B551011/KorService1/searchFestival1` +
+      `?serviceKey=${key}&numOfRows=100&pageNo=${page}` +
+      `&MobileOS=ETC&MobileApp=Test&_type=json&contentTypeId=15` +
+      `&eventStartDate=20260101&eventEndDate=20261231&arrange=B`,
+  },
+  {
+    label: "KorService/searchFestival1",
+    buildUrl: (key, page) =>
+      `https://apis.data.go.kr/B551011/KorService/searchFestival1` +
+      `?serviceKey=${key}&numOfRows=100&pageNo=${page}` +
+      `&MobileOS=ETC&MobileApp=Test&_type=json&contentTypeId=15` +
+      `&eventStartDate=20260101&eventEndDate=20261231&arrange=B`,
+  },
+  {
+    label: "KorService1/searchFestival",
+    buildUrl: (key, page) =>
+      `https://apis.data.go.kr/B551011/KorService1/searchFestival` +
+      `?serviceKey=${key}&numOfRows=100&pageNo=${page}` +
+      `&MobileOS=ETC&MobileApp=Test&_type=json&contentTypeId=15` +
+      `&eventStartDate=20260101&eventEndDate=20261231&arrange=B`,
+  },
+  {
+    label: "visitkorea.or.kr/KorService/searchFestival",
+    buildUrl: (key, page) =>
+      `https://api.visitkorea.or.kr/openapi/service/rest/KorService/searchFestival` +
+      `?ServiceKey=${key}&numOfRows=100&pageNo=${page}` +
+      `&MobileOS=ETC&MobileApp=Test&_type=json&contentTypeId=15` +
+      `&eventStartDate=20260101&eventEndDate=20261231&arrange=B`,
+  },
+];
 
 // ── API 키 정규화 ─────────────────────────────
 // data.go.kr 키는 인코딩키(URL-encoded)·디코딩키(raw) 두 종류.
@@ -111,24 +146,22 @@ function httpsGet(url) {
   });
 }
 
-// ── 단일 페이지 fetch ─────────────────────────────
-async function fetchPage(encodedKey, pageNo) {
-  const url =
-    `${BASE_URL}/searchFestival1` +
-    `?serviceKey=${encodedKey}` +
-    `&numOfRows=100&pageNo=${pageNo}` +
-    `&MobileOS=ETC&MobileApp=nolrugaja&_type=json` +
-    `&contentTypeId=15` +
-    `&eventStartDate=20260101&eventEndDate=20261231` +
-    `&arrange=B`;
+// ── 단일 URL fetch → { data, ok } ────────────────────
+async function tryFetch(url, label, pageNo) {
+  log(`  [${label}] 페이지 ${pageNo} 요청...`);
 
-  log(`  페이지 ${pageNo} 요청...`);
+  let status, body;
+  try {
+    ({ status, body } = await httpsGet(url));
+  } catch (e) {
+    warning(`  [${label}] 네트워크 오류: ${e.message}`);
+    return null;
+  }
 
-  const { status, body } = await httpsGet(url);
-  log(`  응답 앞 300자: ${body.slice(0, 300)}`);
+  log(`  [${label}] HTTP ${status} / 응답 앞 200자: ${body.slice(0, 200)}`);
 
   if (status !== 200) {
-    warning(`HTTP ${status} — API 서버 오류`);
+    warning(`  [${label}] HTTP ${status} — 다음 엔드포인트 시도`);
     return null;
   }
 
@@ -136,49 +169,57 @@ async function fetchPage(encodedKey, pageNo) {
   try {
     data = JSON.parse(body);
   } catch {
-    warning("JSON 파싱 실패 — XML 또는 오류 텍스트 수신. API 키 인증을 확인하세요.");
-    log(`  원문: ${body.slice(0, 800)}`);
+    warning(`  [${label}] JSON 파싱 실패 — XML 또는 오류 텍스트`);
+    return null;
+  }
+
+  const code = data?.response?.header?.resultCode;
+  if (code && code !== "0000") {
+    warning(`  [${label}] API resultCode=${code} (${data?.response?.header?.resultMsg}) — 다음 엔드포인트 시도`);
     return null;
   }
 
   return data;
 }
 
-// ── 전체 데이터 fetch (페이지네이션) ──────────────────
+// ── 작동하는 엔드포인트 탐색 → 전체 데이터 반환 ──────────
 async function fetchAllFestivals(encodedKey) {
-  const first = await fetchPage(encodedKey, 1);
-  if (!first) return [];
+  const toArr = (items) =>
+    Array.isArray(items) ? items : items ? [items] : [];
 
-  const header = first?.response?.header;
-  log(`API 응답 헤더: ${JSON.stringify(header)}`);
+  // 1페이지로 각 엔드포인트 시험
+  let workingEndpoint = null;
+  let firstData = null;
 
-  if (header?.resultCode !== "0000") {
-    const code = header?.resultCode ?? "unknown";
-    const msg  = header?.resultMsg  ?? "unknown";
-    ghError(`API 오류 [${code}] ${msg}`);
-
-    if (["SERVICE_KEY_IS_NOT_REGISTERED_ERROR", "22", "30"].includes(code)) {
-      warning("→ data.go.kr 마이페이지 > 오픈API > 활용신청 목록에서 'KorService1 > searchFestival1'이 승인되어 있는지 확인하세요.");
-      warning("→ TOUR_API_KEY 값이 '일반 인증키(디코딩)'인지, 인코딩키인지도 확인하세요.");
+  for (const ep of ENDPOINTS) {
+    const url  = ep.buildUrl(encodedKey, 1);
+    const data = await tryFetch(url, ep.label, 1);
+    if (data) {
+      workingEndpoint = ep;
+      firstData = data;
+      notice(`작동하는 엔드포인트: ${ep.label}`);
+      break;
     }
+  }
+
+  if (!workingEndpoint) {
+    ghError("모든 엔드포인트 실패. TOUR_API_KEY 또는 API 서비스 신청 상태를 확인하세요.");
     return [];
   }
 
-  const body       = first?.response?.body;
+  const body       = firstData?.response?.body;
   const totalCount = Number(body?.totalCount ?? 0);
   log(`전체 축제 수: ${totalCount}건`);
-  notice(`API 호출 성공 — 전체 ${totalCount}건`);
-
-  const toArr = (items) =>
-    Array.isArray(items) ? items : items ? [items] : [];
+  notice(`API 호출 성공 — 총 ${totalCount}건`);
 
   const all = toArr(body?.items?.item);
 
   const totalPages = Math.ceil(totalCount / 100);
   for (let p = 2; p <= totalPages; p++) {
-    const page = await fetchPage(encodedKey, p);
-    if (!page) break;
-    all.push(...toArr(page?.response?.body?.items?.item));
+    const url  = workingEndpoint.buildUrl(encodedKey, p);
+    const data = await tryFetch(url, workingEndpoint.label, p);
+    if (!data) break;
+    all.push(...toArr(data?.response?.body?.items?.item));
   }
 
   return all;
