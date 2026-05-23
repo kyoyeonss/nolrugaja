@@ -15,40 +15,14 @@ const __dirname  = path.dirname(__filename);
 
 const RAW_KEY = process.env.TOUR_API_KEY;
 
-// 시도할 엔드포인트 목록 (HTTP 500 / 인증 오류 시 순서대로 fallback)
-const ENDPOINTS = [
-  {
-    label: "KorService1/searchFestival1",
-    buildUrl: (key, page) =>
-      `https://apis.data.go.kr/B551011/KorService1/searchFestival1` +
-      `?serviceKey=${key}&numOfRows=100&pageNo=${page}` +
-      `&MobileOS=ETC&MobileApp=Test&_type=json&contentTypeId=15` +
-      `&eventStartDate=20250101&eventEndDate=20251231&arrange=B`,
-  },
-  {
-    label: "KorService/searchFestival1",
-    buildUrl: (key, page) =>
-      `https://apis.data.go.kr/B551011/KorService/searchFestival1` +
-      `?serviceKey=${key}&numOfRows=100&pageNo=${page}` +
-      `&MobileOS=ETC&MobileApp=Test&_type=json&contentTypeId=15` +
-      `&eventStartDate=20250101&eventEndDate=20251231&arrange=B`,
-  },
-  {
-    label: "KorService1/searchFestival",
-    buildUrl: (key, page) =>
-      `https://apis.data.go.kr/B551011/KorService1/searchFestival` +
-      `?serviceKey=${key}&numOfRows=100&pageNo=${page}` +
-      `&MobileOS=ETC&MobileApp=Test&_type=json&contentTypeId=15` +
-      `&eventStartDate=20250101&eventEndDate=20251231&arrange=B`,
-  },
-  {
-    label: "visitkorea.or.kr/KorService/searchFestival",
-    buildUrl: (key, page) =>
-      `https://api.visitkorea.or.kr/openapi/service/rest/KorService/searchFestival` +
-      `?ServiceKey=${key}&numOfRows=100&pageNo=${page}` +
-      `&MobileOS=ETC&MobileApp=Test&_type=json&contentTypeId=15` +
-      `&eventStartDate=20250101&eventEndDate=20251231&arrange=B`,
-  },
+// 공공데이터포털 한국관광공사_국문 관광정보 서비스 (KorService1)
+// data.go.kr에서 신청: https://www.data.go.kr/data/15101578/openapi.do
+const ENDPOINT = "https://apis.data.go.kr/B551011/KorService1/searchFestival1";
+
+// 날짜 범위 (연도 우선순위: 현재연도 → 전년도)
+const DATE_RANGES = [
+  { start: "20250101", end: "20251231", label: "2025년" },
+  { start: "20240101", end: "20241231", label: "2024년" },
 ];
 
 // ── API 키 정규화 ─────────────────────────────
@@ -146,22 +120,31 @@ function httpsGet(url) {
   });
 }
 
-// ── 단일 URL fetch → { data, ok } ────────────────────
-async function tryFetch(url, label, pageNo) {
-  log(`  [${label}] 페이지 ${pageNo} 요청...`);
+// ── 단일 페이지 요청 ──────────────────────────────────
+async function fetchPage(encodedKey, pageNo, dateRange) {
+  const url =
+    `${ENDPOINT}` +
+    `?serviceKey=${encodedKey}` +
+    `&numOfRows=100&pageNo=${pageNo}` +
+    `&MobileOS=ETC&MobileApp=Test&_type=json` +
+    `&contentTypeId=15` +
+    `&eventStartDate=${dateRange.start}&eventEndDate=${dateRange.end}` +
+    `&arrange=B`;
+
+  log(`  [${dateRange.label}] 페이지 ${pageNo} 요청...`);
 
   let status, body;
   try {
     ({ status, body } = await httpsGet(url));
   } catch (e) {
-    warning(`  [${label}] 네트워크 오류: ${e.message}`);
+    warning(`네트워크 오류: ${e.message}`);
     return null;
   }
 
-  log(`  [${label}] HTTP ${status} / 응답 앞 200자: ${body.slice(0, 200)}`);
+  log(`  HTTP ${status} / 응답 앞 300자: ${body.slice(0, 300)}`);
 
   if (status !== 200) {
-    warning(`  [${label}] HTTP ${status} — 다음 엔드포인트 시도`);
+    warning(`HTTP ${status} 오류`);
     return null;
   }
 
@@ -169,59 +152,66 @@ async function tryFetch(url, label, pageNo) {
   try {
     data = JSON.parse(body);
   } catch {
-    warning(`  [${label}] JSON 파싱 실패 — XML 또는 오류 텍스트`);
+    warning("JSON 파싱 실패 — XML 또는 오류 텍스트 수신");
+    log(`  원문: ${body.slice(0, 600)}`);
     return null;
   }
 
-  const code = data?.response?.header?.resultCode;
-  if (code && code !== "0000") {
-    warning(`  [${label}] API resultCode=${code} (${data?.response?.header?.resultMsg}) — 다음 엔드포인트 시도`);
+  const header = data?.response?.header;
+  if (header?.resultCode !== "0000") {
+    warning(`API resultCode=${header?.resultCode} / ${header?.resultMsg}`);
+    if (["22", "30", "SERVICE_KEY_IS_NOT_REGISTERED_ERROR"].includes(header?.resultCode)) {
+      ghError("API 키 인증 실패 — data.go.kr 마이페이지에서 '한국관광공사_국문 관광정보 서비스' 활용 신청 여부를 확인하세요.");
+    }
     return null;
   }
 
   return data;
 }
 
-// ── 작동하는 엔드포인트 탐색 → 전체 데이터 반환 ──────────
+// ── 날짜 범위 fallback + 전체 페이지 수집 ─────────────────
 async function fetchAllFestivals(encodedKey) {
   const toArr = (items) =>
     Array.isArray(items) ? items : items ? [items] : [];
 
-  // 1페이지로 각 엔드포인트 시험
-  let workingEndpoint = null;
-  let firstData = null;
+  let workingRange = null;
+  let firstData    = null;
 
-  for (const ep of ENDPOINTS) {
-    const url  = ep.buildUrl(encodedKey, 1);
-    const data = await tryFetch(url, ep.label, 1);
-    if (data) {
-      workingEndpoint = ep;
-      firstData = data;
-      notice(`작동하는 엔드포인트: ${ep.label}`);
+  // 날짜 범위를 순서대로 시도 (데이터가 있는 첫 번째 사용)
+  for (const range of DATE_RANGES) {
+    log(`\n[${range.label}] 1페이지 시험 중...`);
+    const data = await fetchPage(encodedKey, 1, range);
+    if (!data) continue;
+
+    const totalCount = Number(data?.response?.body?.totalCount ?? 0);
+    log(`  totalCount = ${totalCount}`);
+
+    if (totalCount > 0) {
+      workingRange = range;
+      firstData    = data;
+      notice(`데이터 확인: ${range.label} — ${totalCount}건`);
       break;
     }
+    warning(`${range.label}: 0건 → 다음 날짜 범위 시도`);
   }
 
-  if (!workingEndpoint) {
-    ghError("모든 엔드포인트 실패. TOUR_API_KEY 또는 API 서비스 신청 상태를 확인하세요.");
+  if (!workingRange) {
+    ghError("모든 날짜 범위에서 데이터 0건. API 키가 KorService1/searchFestival1 서비스에 등록됐는지 확인하세요.");
     return [];
   }
 
-  const body       = firstData?.response?.body;
-  const totalCount = Number(body?.totalCount ?? 0);
-  log(`전체 축제 수: ${totalCount}건`);
-  notice(`API 호출 성공 — 총 ${totalCount}건`);
-
-  const all = toArr(body?.items?.item);
+  const body       = firstData.response.body;
+  const totalCount = Number(body.totalCount);
+  const all        = toArr(body?.items?.item);
 
   const totalPages = Math.ceil(totalCount / 100);
   for (let p = 2; p <= totalPages; p++) {
-    const url  = workingEndpoint.buildUrl(encodedKey, p);
-    const data = await tryFetch(url, workingEndpoint.label, p);
+    const data = await fetchPage(encodedKey, p, workingRange);
     if (!data) break;
     all.push(...toArr(data?.response?.body?.items?.item));
   }
 
+  notice(`총 ${all.length}건 수집 완료 (${workingRange.label})`);
   return all;
 }
 
