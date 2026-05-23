@@ -1,63 +1,57 @@
-name: 축제·방문자 데이터 업데이트 & 배포
+name: 축제-방문자 데이터 업데이트 및 배포
 
-  on:
-    schedule:
-      - cron: '0 15 * * *'
-    workflow_dispatch:
+on:
+  schedule:
+    - cron: '0 15 * * *'
+  workflow_dispatch:
 
-  permissions:
-    contents: write
+permissions:
+  contents: write
 
-  jobs:
-    update-and-deploy:
-      runs-on: ubuntu-latest
+jobs:
+  update-and-deploy:
+    runs-on: ubuntu-latest
 
-      steps:
-        - name: 체크아웃
-          uses: actions/checkout@v4
-          with:
-            token: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: 체크아웃
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-        - name: Node.js 설정
-          uses: actions/setup-node@v4
-          with:
-            node-version: '20'
-            cache: 'npm'
+      - name: Node.js 설정
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
 
-        - name: 의존성 설치
-          run: npm ci --legacy-peer-deps
+      - name: 의존성 설치
+        run: npm ci --legacy-peer-deps
 
-        - name: 방문자 통계 fetch
-          continue-on-error: true
-          env:
-            TOUR_API_KEY: ${{ secrets.TOUR_API_KEY }}
-          run: node scripts/fetch-tour-data.js
+      - name: 축제 데이터 fetch
+        continue-on-error: true
+        env:
+          TOUR_API_KEY: ${{ secrets.TOUR_API_KEY }}
+        run: |
+          echo "Node: $(node --version)"
+          echo "스크립트 파일: $(ls -la scripts/fetchTourData.js)"
+          node scripts/fetchTourData.js
+          echo "종료 코드: $?"
 
-        - name: 축제 데이터 fetch
-          continue-on-error: true
-          env:
-            TOUR_API_KEY: ${{ secrets.TOUR_API_KEY }}
-          run: |
-            echo "Node: $(node --version)"
-            echo "스크립트 파일: $(ls -la scripts/fetchTourData.js)"
-            node scripts/fetchTourData.js
-            echo "종료 코드: $?"
+      - name: 변경사항 커밋 & 푸시
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email github-actions[bot]@users.noreply.github.com
+          git add src/data/festivals.js
+          git diff --staged --quiet && echo "변경 없음" || (git commit -m "chore: TourAPI 데이터 자동 업데이트 [skip ci]" && git push)
 
-        - name: 변경사항 커밋 & 푸시
-          run: |
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git add src/data/festivals.js public/data/visitors.json
-            git diff --staged --quiet && echo "변경 없음" || (git commit -m "chore: TourAPI 데이터 자동 업데이트 [skip ci]" && git push)
+      - name: 프로덕션 빌드
+        env:
+          VITE_KAKAO_MAP_KEY: ${{ secrets.VITE_KAKAO_MAP_KEY }}
+        run: npm run build
 
-        - name: 프로덕션 빌드
-          env:
-            VITE_KAKAO_MAP_KEY: ${{ secrets.VITE_KAKAO_MAP_KEY }}
-          run: npm run build
-
-        - name: GitHub Pages 배포
-          uses: peaceiris/actions-gh-pages@v4
-          with:
-            github_token: ${{ secrets.GITHUB_TOKEN }}
-            publish_dir: ./dist
-            publish_branch: gh-pages
+      - name: GitHub Pages 배포
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          publish_branch: gh-pages
