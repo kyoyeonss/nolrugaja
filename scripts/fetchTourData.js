@@ -23,7 +23,7 @@ const ENDPOINTS = [
       `https://apis.data.go.kr/B551011/KorService1/searchFestival1` +
       `?serviceKey=${key}&numOfRows=100&pageNo=${page}` +
       `&MobileOS=ETC&MobileApp=Test&_type=json&contentTypeId=15` +
-      `&eventStartDate=20260101&eventEndDate=20261231&arrange=B`,
+      `&eventStartDate=20250101&eventEndDate=20251231&arrange=B`,
   },
   {
     label: "KorService/searchFestival1",
@@ -31,7 +31,7 @@ const ENDPOINTS = [
       `https://apis.data.go.kr/B551011/KorService/searchFestival1` +
       `?serviceKey=${key}&numOfRows=100&pageNo=${page}` +
       `&MobileOS=ETC&MobileApp=Test&_type=json&contentTypeId=15` +
-      `&eventStartDate=20260101&eventEndDate=20261231&arrange=B`,
+      `&eventStartDate=20250101&eventEndDate=20251231&arrange=B`,
   },
   {
     label: "KorService1/searchFestival",
@@ -39,7 +39,7 @@ const ENDPOINTS = [
       `https://apis.data.go.kr/B551011/KorService1/searchFestival` +
       `?serviceKey=${key}&numOfRows=100&pageNo=${page}` +
       `&MobileOS=ETC&MobileApp=Test&_type=json&contentTypeId=15` +
-      `&eventStartDate=20260101&eventEndDate=20261231&arrange=B`,
+      `&eventStartDate=20250101&eventEndDate=20251231&arrange=B`,
   },
   {
     label: "visitkorea.or.kr/KorService/searchFestival",
@@ -47,7 +47,7 @@ const ENDPOINTS = [
       `https://api.visitkorea.or.kr/openapi/service/rest/KorService/searchFestival` +
       `?ServiceKey=${key}&numOfRows=100&pageNo=${page}` +
       `&MobileOS=ETC&MobileApp=Test&_type=json&contentTypeId=15` +
-      `&eventStartDate=20260101&eventEndDate=20261231&arrange=B`,
+      `&eventStartDate=20250101&eventEndDate=20251231&arrange=B`,
   },
 ];
 
