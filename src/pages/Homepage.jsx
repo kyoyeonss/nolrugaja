@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { festivals } from '../data/festivals';
 import BottomNav from '../components/BottomNav';
+import { useVisitorData, formatVisitors, REGION_AREA_CD } from '../hooks/useVisitorData';
 import './Homepage.css';
 
 const TOP3 = [...festivals]
@@ -19,13 +20,17 @@ const TREND_CONFIG = {
   하락: { cls: 'trend-down', label: '▼ 하락' },
 };
 
-function formatVisitors(num) {
-  const man = num / 10000;
-  return `${man % 1 === 0 ? man : man.toFixed(1)}만 명`;
-}
+// 지역명 한글 표시
+const REGION_LABEL = {
+  seoul: '서울', busan: '부산', gyeongju: '경주', jeonju: '전주',
+  jeju: '제주', andong: '안동', chuncheon: '춘천', gwangju: '광주',
+  incheon: '인천', daejeon: '대전', gangneung: '강릉', tongyeong: '통영',
+  yeosu: '여수', sokcho: '속초', damyang: '담양',
+};
 
 function Homepage() {
   const navigate = useNavigate();
+  const { data: visitorData, loading } = useVisitorData();
 
   return (
     <div className="homepage">
@@ -52,12 +57,12 @@ function Homepage() {
         {/* 히어로 통계 칩 */}
         <div className="hero-stats">
           <div className="hero-stat">
-            <span className="hero-stat-num">15</span>
+            <span className="hero-stat-num">30</span>
             <span className="hero-stat-label">개 축제</span>
           </div>
           <div className="hero-stat-divider" />
           <div className="hero-stat">
-            <span className="hero-stat-num">10</span>
+            <span className="hero-stat-num">15</span>
             <span className="hero-stat-label">개 지역</span>
           </div>
           <div className="hero-stat-divider" />
@@ -119,6 +124,51 @@ function Homepage() {
         <button className="map-btn" onClick={() => navigate('/map')}>
           전체 축제 지도로 보기
         </button>
+      </section>
+
+      {/* ── 실시간 지역별 방문자 ─────────────────── */}
+      <section className="visitor-section">
+        <div className="section-header">
+          <h2 className="section-title">📊 실시간 지역별 방문자</h2>
+          <span className="section-sub">
+            {visitorData ? `${visitorData.updatedAt.slice(0,4)}.${visitorData.updatedAt.slice(4,6)}.${visitorData.updatedAt.slice(6)} 기준` : '로딩 중...'}
+          </span>
+        </div>
+
+        {loading && <div className="visitor-loading">데이터 불러오는 중...</div>}
+
+        {visitorData && (() => {
+          // 축제가 있는 지역만 추려서 방문자 순으로 정렬
+          const regionEntries = Object.entries(REGION_LABEL).map(([regionId, label]) => {
+            const areaCd = REGION_AREA_CD[regionId];
+            const area = visitorData.byArea[areaCd];
+            return { regionId, label, area };
+          }).filter(e => e.area).sort((a, b) => b.area.total - a.area.total);
+
+          const maxTotal = regionEntries[0]?.area.total || 1;
+
+          return (
+            <div className="visitor-list">
+              {regionEntries.map(({ regionId, label, area }, i) => (
+                <div key={regionId} className="visitor-row">
+                  <span className="visitor-rank">#{i + 1}</span>
+                  <span className="visitor-name">{label}</span>
+                  <div className="visitor-bar-wrap">
+                    <div
+                      className="visitor-bar"
+                      style={{ width: `${(area.total / maxTotal) * 100}%` }}
+                    />
+                  </div>
+                  <span className="visitor-num">{formatVisitors(area.total)}</span>
+                </div>
+              ))}
+            </div>
+          );
+        })()}
+
+        {visitorData && (
+          <p className="visitor-source">출처: 한국관광공사 TourAPI · 매일 갱신</p>
+        )}
       </section>
 
       <BottomNav />

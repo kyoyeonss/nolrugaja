@@ -1,0 +1,247 @@
+.dp-page {
+  min-height: 100vh;
+  background: #F0F2F8;
+  padding-bottom: 62px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.dp-not-found {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  gap: 16px;
+  color: #555;
+}
+
+.dp-back {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 10;
+  background: rgba(255,255,255,0.85);
+  border: none;
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1B2A5C;
+  cursor: pointer;
+}
+
+/* 히어로 */
+.dp-hero {
+  position: relative;
+  height: 260px;
+  overflow: hidden;
+}
+.dp-hero-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.dp-hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 50%);
+}
+.dp-hero-info {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  right: 20px;
+}
+.dp-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.dp-tag {
+  background: rgba(255,255,255,0.2);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 10px;
+  backdrop-filter: blur(4px);
+}
+.dp-title {
+  color: #fff;
+  font-size: 22px;
+  font-weight: 800;
+  margin: 0 0 6px;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+.dp-date {
+  color: rgba(255,255,255,0.85);
+  font-size: 13px;
+  font-weight: 500;
+  margin: 0;
+}
+
+/* 본문 */
+.dp-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.dp-section {
+  background: #fff;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 2px 12px rgba(27, 42, 92, 0.07);
+}
+
+.dp-stat-row {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.dp-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.dp-stat-label {
+  font-size: 11px;
+  color: #aab0c0;
+  font-weight: 500;
+}
+.dp-stat-value {
+  font-size: 18px;
+  font-weight: 800;
+  color: #1B2A5C;
+}
+.dp-trend {
+  margin-left: auto;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.trend-up   { background: #dcfce7; color: #16a34a; }
+.trend-keep { background: #f1f5f9; color: #64748b; }
+.trend-down { background: #fee2e2; color: #dc2626; }
+
+.dp-desc {
+  font-size: 14px;
+  color: #555;
+  line-height: 1.7;
+  margin: 0;
+}
+
+/* 실시간 방문자 */
+.dp-section-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1B2A5C;
+  margin: 0 0 4px;
+}
+.dp-section-sub {
+  font-size: 11px;
+  color: #aab0c0;
+  margin: 0 0 16px;
+}
+
+.dp-total-visitors {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 20px;
+}
+.dp-total-num {
+  font-size: 32px;
+  font-weight: 900;
+  color: #0F8B8D;
+}
+.dp-total-label {
+  font-size: 14px;
+  color: #888;
+  font-weight: 500;
+}
+
+/* 방문자 유형 바 */
+.dp-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+.dp-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.dp-bar-label {
+  width: 36px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #555;
+}
+.dp-bar-track {
+  flex: 1;
+  height: 10px;
+  background: #eef0f4;
+  border-radius: 5px;
+  overflow: hidden;
+}
+.dp-bar-fill {
+  height: 100%;
+  border-radius: 5px;
+  transition: width 0.6s ease;
+}
+.bar-local    { background: #0F8B8D; }
+.bar-nonlocal { background: #F4845F; }
+.bar-foreign  { background: #1B2A5C; }
+.dp-bar-num {
+  width: 44px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #555;
+  text-align: right;
+}
+
+/* 차트 */
+.dp-chart {
+  border-top: 1px solid #eef0f4;
+  padding-top: 16px;
+}
+.dp-chart-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #555;
+  margin: 0 0 12px;
+}
+.dp-chart-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 80px;
+}
+.dp-chart-bar-wrap {
+  flex: 1;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+  cursor: default;
+}
+.dp-chart-bar {
+  width: 100%;
+  background: linear-gradient(to top, #0F8B8D, #22c5c7);
+  border-radius: 2px 2px 0 0;
+  min-height: 4px;
+  transition: height 0.4s ease;
+}
+.dp-chart-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: #aab0c0;
+  margin-top: 4px;
+}

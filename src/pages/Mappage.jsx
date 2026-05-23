@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { festivals, regions } from '../data/festivals';
+import { useVisitorData, getAreaData, formatVisitors } from '../hooks/useVisitorData';
 import './Mappage.css';
 
 // ── 필터 옵션 ──────────────────────────────────────────────
@@ -65,10 +66,6 @@ function applyFilters(list, { region, category, season }) {
   });
 }
 
-function formatVisitors(num) {
-  const man = num / 10000;
-  return `${man % 1 === 0 ? man : man.toFixed(1)}만 명`;
-}
 
 // ── 컴포넌트 ───────────────────────────────────────────────
 function Mappage() {
@@ -81,6 +78,7 @@ function Mappage() {
   const [selectedFestival, setSelectedFestival] = useState(null);
   const [cardVisible, setCardVisible]           = useState(false);
   const [filters, setFilters]                   = useState(INIT_FILTERS);
+  const { data: visitorData } = useVisitorData();
 
   const setFilter = (key, val) => setFilters(prev => ({ ...prev, [key]: val }));
 
@@ -284,6 +282,34 @@ function Mappage() {
                 <span key={tag} className="tag">#{tag}</span>
               ))}
             </div>
+
+            {/* 실시간 지역 방문자 */}
+            {(() => {
+              const area = getAreaData(visitorData, selectedFestival.region);
+              if (!area) return null;
+              return (
+                <div className="card-realtime">
+                  <p className="card-realtime-title">📊 {area.name} 최근 30일 방문자</p>
+                  <div className="card-realtime-total">{formatVisitors(area.total)}명</div>
+                  <div className="card-realtime-bars">
+                    {[
+                      { label: '현지인', value: area.local,    cls: 'rt-local' },
+                      { label: '외지인', value: area.nonlocal, cls: 'rt-nonlocal' },
+                      { label: '외국인', value: area.foreign,  cls: 'rt-foreign' },
+                    ].map(({ label, value, cls }) => (
+                      <div key={label} className="card-rt-row">
+                        <span className="card-rt-label">{label}</span>
+                        <div className="card-rt-track">
+                          <div className={`card-rt-fill ${cls}`} style={{ width: `${(value / area.total) * 100}%` }} />
+                        </div>
+                        <span className="card-rt-num">{formatVisitors(value)}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="card-realtime-source">출처: 한국관광공사 TourAPI</p>
+                </div>
+              );
+            })()}
           </div>
         </div>
       )}

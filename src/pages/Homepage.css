@@ -282,3 +282,75 @@
   background: #162249;
   transform: translateY(-1px);
 }
+
+/* ── 실시간 방문자 섹션 ─────────────────────── */
+.visitor-section {
+  padding: 28px 20px 20px;
+}
+
+.visitor-loading {
+  text-align: center;
+  color: #aab0c0;
+  font-size: 14px;
+  padding: 20px 0;
+}
+
+.visitor-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.visitor-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.visitor-rank {
+  width: 28px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #aab0c0;
+  flex-shrink: 0;
+}
+
+.visitor-name {
+  width: 40px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1B2A5C;
+  flex-shrink: 0;
+}
+
+.visitor-bar-wrap {
+  flex: 1;
+  height: 8px;
+  background: #eef0f4;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.visitor-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #0F8B8D, #22c5c7);
+  border-radius: 4px;
+  transition: width 0.6s ease;
+}
+
+.visitor-num {
+  width: 52px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #0F8B8D;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.visitor-source {
+  margin-top: 14px;
+  font-size: 11px;
+  color: #aab0c0;
+  text-align: right;
+}

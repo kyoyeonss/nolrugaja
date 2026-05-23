@@ -301,3 +301,66 @@
   font-size: 12px;
   font-weight: 500;
 }
+
+/* ── 슬라이드 카드 실시간 방문자 ──────────────── */
+.card-realtime {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid #f0f0f0;
+}
+.card-realtime-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1B2A5C;
+  margin: 0 0 4px;
+}
+.card-realtime-total {
+  font-size: 22px;
+  font-weight: 900;
+  color: #0F8B8D;
+  margin-bottom: 10px;
+}
+.card-realtime-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.card-rt-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.card-rt-label {
+  width: 36px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #666;
+}
+.card-rt-track {
+  flex: 1;
+  height: 8px;
+  background: #f0f0f0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.card-rt-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+.rt-local    { background: #0F8B8D; }
+.rt-nonlocal { background: #F4845F; }
+.rt-foreign  { background: #1B2A5C; }
+.card-rt-num {
+  width: 40px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #555;
+  text-align: right;
+}
+.card-realtime-source {
+  font-size: 10px;
+  color: #bbb;
+  text-align: right;
+  margin: 8px 0 0;
+}
