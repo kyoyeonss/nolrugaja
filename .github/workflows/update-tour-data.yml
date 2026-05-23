@@ -1,56 +1,46 @@
 name: 축제·방문자 데이터 업데이트 & 배포
 
-  on:
-    schedule:
-      - cron: '0 15 * * *'
-    workflow_dispatch:
+on:
+  schedule:
+    - cron: '0 15 * * *'
+  workflow_dispatch:
 
-  permissions:
-    contents: write
+permissions:
+  contents: write
 
-  jobs:
-    update-and-deploy:
-      runs-on: ubuntu-latest
+jobs:
+  update-and-deploy:
+    runs-on: ubuntu-latest
 
-      steps:
-        - name: 체크아웃
-          uses: actions/checkout@v4
+    steps:
+      - name: 체크아웃
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-        - name: Node.js 설정
-          uses: actions/setup-node@v4
-          with:
-            node-version: '20'
-            cache: 'npm'
+      - name: Node.js 설정
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
 
-        - name: 의존성 설치
-          run: npm ci --legacy-peer-deps
+      - name: 의존성 설치
+        run: npm ci --legacy-peer-deps
 
-        - name: 방문자 통계 fetch (public/data/visitors.json)
-          env:
-            TOUR_API_KEY: ${{ secrets.TOUR_API_KEY }}
-          run: node scripts/fetch-tour-data.js
+      - name: 방문자 통계 fetch
+        env:
+          TOUR_API_KEY: ${{ secrets.TOUR_API_KEY }}
+        run: node scripts/fetch-tour-data.js
 
-        - name: 축제 데이터 fetch (src/data/festivals.js)
-          env:
-            TOUR_API_KEY: ${{ secrets.TOUR_API_KEY }}
-          run: node scripts/fetchTourData.js
+      - name: 축제 데이터 fetch
+        env:
+          TOUR_API_KEY: ${{ secrets.TOUR_API_KEY }}
+        run: node scripts/fetchTourData.js
 
-        - name: 데이터 변경사항 커밋 & 푸시
-          run: |
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git add src/data/festivals.js public/data/visitors.json
-            git diff --staged --quiet || git commit -m "chore: TourAPI 데이터 자동 업데이트 [skip ci]"
-            git push || true
-
-        - name: 프로덕션 빌드
-          env:
-            VITE_KAKAO_MAP_KEY: ${{ secrets.VITE_KAKAO_MAP_KEY }}
-          run: npm run build
-
-        - name: GitHub Pages 배포
-          uses: peaceiris/actions-gh-pages@v4
-          with:
-            github_token: ${{ secrets.GITHUB_TOKEN }}
-            publish_dir: ./dist
-            publish_branch: gh-pages
+      - name: 변경사항 커밋 & 푸시
+        run: |
+          git config user.name github-actions
+          git config user.email actions@github.com
+          git add src/data/ public/data/
+          git diff --staged --quiet || git commit -m "chore: TourAPI 데이터 자동 업데이트"
+          git push
