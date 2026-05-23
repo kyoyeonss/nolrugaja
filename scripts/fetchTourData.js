@@ -6,7 +6,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const API_KEY = process.env.TOUR_API_KEY;
-const BASE_URL = "https://apis.data.go.kr/B551011/KorService2";
+const BASE_URL = "https://apis.data.go.kr/B551011/KorService1";
 
 async function fetchFestivals() {
   const params = new URLSearchParams({
@@ -22,26 +22,47 @@ async function fetchFestivals() {
     arrange: "B",
   });
 
-  const res = await fetch(`${BASE_URL}/searchFestival1?${params}`);
-  const data = await res.json();
-  console.log("API 응답:", JSON.stringify(data?.response?.header));
-  const items = data?.response?.body?.items?.item;
-  if (!items) {
-    console.log("데이터 없음. body:", JSON.stringify(data?.response?.body));
+  const url = `${BASE_URL}/searchFestival1?${params}`;
+  console.log("요청 URL (키 제외):", url.replace(API_KEY, "***"));
+
+  const res = await fetch(url);
+  const text = await res.text();
+  console.log("응답 앞 300자:", text.slice(0, 300));
+
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch (e) {
+    console.error("JSON 파싱 실패. 응답이 JSON이 아님:", text.slice(0, 500));
     return [];
   }
+
+  const header = data?.response?.header;
+  console.log("응답 헤더:", JSON.stringify(header));
+
+  if (header?.resultCode !== "0000") {
+    console.error("API 에러:", header?.resultMsg);
+    return [];
+  }
+
+  const items = data?.response?.body?.items?.item;
+  if (!items) {
+    console.log("items 없음. body:", JSON.stringify(data?.response?.body));
+    return [];
+  }
+
   return Array.isArray(items) ? items : [items];
 }
 
 async function main() {
-  console.log("TourAPI 데이터 fetch 시작...");
+  console.log("=== TourAPI 데이터 fetch 시작 ===");
   console.log("API_KEY 앞 10자:", API_KEY?.slice(0, 10));
 
   const rawFestivals = await fetchFestivals();
   console.log(`축제 데이터 ${rawFestivals.length}개 받아옴`);
 
   if (rawFestivals.length === 0) {
-    console.log("데이터가 없어서 기존 파일 유지");
+    console.log("데이터 없음 → 기존 파일 유지");
     return;
   }
 
@@ -64,7 +85,6 @@ async function main() {
     eventEndDate: f.eventenddate,
   }));
 
-  // regions는 유지하고 festivals만 교체
   const outputPath = path.join(__dirname, "../src/data/festivals.js");
   const existing = fs.readFileSync(outputPath, "utf-8");
   const regionsMatch = existing.match(/export const regions = \[[\s\S]*?\];/);
@@ -72,7 +92,8 @@ async function main() {
 
   const content = `${regionsCode}\n\nexport const festivals = ${JSON.stringify(festivals, null, 2)};\n`;
   fs.writeFileSync(outputPath, content);
-  console.log("festivals.js 업데이트 완료!");
+  console.log("=== festivals.js 업데이트 완료! ===");
+  console.log(`총 ${festivals.length}개 축제 데이터 저장됨`);
 }
 
 main().catch(console.error);
