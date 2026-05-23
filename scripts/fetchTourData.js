@@ -17,7 +17,8 @@ async function fetchFestivals() {
     MobileApp: "놀러가자",
     _type: "json",
     contentTypeId: 15,
-    eventStartDate: new Date().toISOString().slice(0, 10).replace(/-/g, ""),
+    eventStartDate: "20260101",
+    eventEndDate: "20261231",
     arrange: "B",
   });
 
