@@ -6,7 +6,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const API_KEY = process.env.TOUR_API_KEY;
-const BASE_URL = "https://apis.data.go.kr/B551011/KorService1";
+const BASE_URL = "https://apis.data.go.kr/B551011/KorService2";
 
 async function fetchFestivals() {
   const params = new URLSearchParams({
