@@ -30,13 +30,34 @@ async function fetchFestivals() {
 
 async function main() {
   console.log("TourAPI 데이터 fetch 시작...");
-  const festivals = await fetchFestivals();
-  console.log(`축제 데이터 ${festivals.length}개 받아옴`);
+  const rawFestivals = await fetchFestivals();
+  console.log(`축제 데이터 ${rawFestivals.length}개 받아옴`);
 
-  const outputPath = path.join(__dirname, "../src/data/festivals_api.json");
-  fs.mkdirSync(path.dirname(outputPath), { recursive: true });
-  fs.writeFileSync(outputPath, JSON.stringify(festivals, null, 2));
-  console.log("저장 완료:", outputPath);
+  // TourAPI 데이터를 festivals.js 형식으로 변환
+  const festivals = rawFestivals.map((f, i) => ({
+    id: i + 1,
+    name: f.title,
+    region: f.addr1?.split(" ")[0] || "전국",
+    date: `${f.eventstartdate?.slice(4, 6)}월`,
+    description: f.overview || f.title,
+    tags: [],
+    image: f.firstimage || f.firstimage2 || `https://picsum.photos/seed/${i}/400/250`,
+    lat: parseFloat(f.mapy) || 37.5665,
+    lng: parseFloat(f.mapx) || 126.978,
+    visitors: Math.floor(Math.random() * 500000) + 50000,
+    popularityRank: i + 1,
+    trend: "유지",
+    addr: f.addr1,
+    tel: f.tel,
+    eventStartDate: f.eventstartdate,
+    eventEndDate: f.eventenddate,
+  }));
+
+  // festivals.js 파일 덮어쓰기
+  const outputPath = path.join(__dirname, "../src/data/festivals.js");
+  const content = `export const festivals = ${JSON.stringify(festivals, null, 2)};\n`;
+  fs.writeFileSync(outputPath, content);
+  console.log("festivals.js 업데이트 완료!");
 }
 
 main().catch(console.error);
