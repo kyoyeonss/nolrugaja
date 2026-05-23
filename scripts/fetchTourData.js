@@ -1,9 +1,28 @@
-async function fetchFestivals() {
-  const url = `${BASE_URL}/searchFestival1?serviceKey=${API_KEY}&numOfRows=100&pageNo=1&MobileOS=ETC&MobileApp=Test&_type=json&contentTypeId=15&eventStartDate=20260101&eventEndDate=20261231&arrange=B`;
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 
+// 스크립트 로드 확인 (동기 출력 - 가장 먼저 실행)
+process.stdout.write("[fetchTourData] 스크립트 로드됨\n");
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const API_KEY = process.env.TOUR_API_KEY;
+const BASE_URL = "https://apis.data.go.kr/B551011/KorService1";
+
+async function fetchFestivals() {
+  const url = `${BASE_URL}/searchFestival1?serviceKey=${API_KEY}&numOfRows=100&pageNo=1&MobileOS=ETC&MobileApp=nolrugaja&_type=json&contentTypeId=15&eventStartDate=20260101&eventEndDate=20261231&arrange=B`;
   console.log("요청 URL (키 제외):", url.replace(API_KEY, "***"));
 
-  const res = await fetch(url);
+  let res;
+  try {
+    res = await fetch(url);
+  } catch (e) {
+    console.error("fetch 자체 실패 (네트워크/fetch 미지원):", e.message);
+    return [];
+  }
+
   const text = await res.text();
   console.log("응답 앞 300자:", text.slice(0, 300));
 
@@ -25,9 +44,63 @@ async function fetchFestivals() {
 
   const items = data?.response?.body?.items?.item;
   if (!items) {
-    console.log("items 없음");
+    console.log("items 없음 (결과 0건)");
     return [];
   }
 
   return Array.isArray(items) ? items : [items];
 }
+
+async function main() {
+  console.log("=== TourAPI 데이터 fetch 시작 ===");
+  console.log("API_KEY 앞 10자:", API_KEY ? API_KEY.slice(0, 10) + "..." : "undefined (미설정!)");
+
+  if (!API_KEY) {
+    console.error("TOUR_API_KEY 환경변수가 없습니다. GitHub Secrets를 확인하세요.");
+    process.exit(1);
+  }
+
+  const rawFestivals = await fetchFestivals();
+  console.log(`축제 데이터 ${rawFestivals.length}개 받아옴`);
+
+  if (rawFestivals.length === 0) {
+    console.log("데이터 없음 → 기존 파일 유지");
+    return;
+  }
+
+  const festivals = rawFestivals.map((f, i) => ({
+    id: i + 1,
+    name: f.title,
+    region: f.addr1?.split(" ")[0] || "전국",
+    date: `${f.eventstartdate?.slice(4, 6)}월`,
+    description: f.title,
+    tags: [],
+    image: f.firstimage || f.firstimage2 || `https://picsum.photos/seed/${i}/400/250`,
+    lat: parseFloat(f.mapy) || 37.5665,
+    lng: parseFloat(f.mapx) || 126.978,
+    visitors: Math.floor(Math.random() * 500000) + 50000,
+    popularityRank: i + 1,
+    trend: "유지",
+    addr: f.addr1,
+    tel: f.tel,
+    eventStartDate: f.eventstartdate,
+    eventEndDate: f.eventenddate,
+  }));
+
+  const outputPath = path.join(__dirname, "../src/data/festivals.js");
+  const existing = fs.readFileSync(outputPath, "utf-8");
+  const regionsMatch = existing.match(/export const regions = \[[\s\S]*?\];/);
+  const regionsCode = regionsMatch ? regionsMatch[0] : "";
+  const content = `${regionsCode}\n\nexport const festivals = ${JSON.stringify(festivals, null, 2)};\n`;
+
+  fs.writeFileSync(outputPath, content);
+  console.log("=== festivals.js 업데이트 완료! ===");
+}
+
+// 에러를 stdout으로 출력 후 exit 1로 명확히 종료
+main().catch(err => {
+  console.error("=== 치명적 에러 ===");
+  console.error(err?.message || String(err));
+  console.error(err?.stack || "");
+  process.exit(1);
+});
