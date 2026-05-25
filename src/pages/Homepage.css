@@ -28,21 +28,21 @@
   height: 280px;
   top: -100px;
   right: -80px;
-  background: rgba(15, 139, 141, 0.18);
+  background: rgba(34, 197, 94, 0.15);
 }
 .hero-circle--sm {
   width: 160px;
   height: 160px;
   bottom: -60px;
   left: -40px;
-  background: rgba(15, 139, 141, 0.12);
+  background: rgba(34, 197, 94, 0.10);
 }
 .hero-ring {
   position: absolute;
   width: 120px;
   height: 120px;
   border-radius: 50%;
-  border: 2px solid rgba(244, 132, 95, 0.22);
+  border: 2px solid rgba(34, 197, 94, 0.28);
   top: 28px;
   right: 28px;
   pointer-events: none;
@@ -56,15 +56,15 @@
 
 .hero-eyebrow {
   display: inline-block;
-  background: rgba(15, 139, 141, 0.3);
-  color: #5ECFCF;
+  background: rgba(34, 197, 94, 0.15);
+  color: #4ade80;
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 1px;
   text-transform: uppercase;
   padding: 4px 12px;
   border-radius: 20px;
-  border: 1px solid rgba(15, 139, 141, 0.4);
+  border: 1px solid rgba(34, 197, 94, 0.35);
   margin-bottom: 14px;
 }
 
@@ -88,7 +88,7 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background: linear-gradient(135deg, #F4845F, #e86e47);
+  background: linear-gradient(135deg, #22c55e, #16a34a);
   color: #fff;
   border: none;
   border-radius: 26px;
@@ -96,12 +96,12 @@
   font-size: 15px;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 4px 18px rgba(244, 132, 95, 0.45);
+  box-shadow: 0 4px 18px rgba(34, 197, 94, 0.45);
   transition: transform 0.15s, box-shadow 0.15s;
 }
 .hero-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 22px rgba(244, 132, 95, 0.55);
+  box-shadow: 0 6px 22px rgba(34, 197, 94, 0.55);
 }
 .hero-btn-arrow {
   font-size: 18px;
@@ -240,7 +240,7 @@
 .card-date {
   margin: 0 0 10px;
   font-size: 12px;
-  color: #F4845F;
+  color: #16a34a;
   font-weight: 600;
 }
 
@@ -257,8 +257,8 @@
 .card-rank-chip {
   font-size: 12px;
   font-weight: 700;
-  color: #0F8B8D;
-  background: rgba(15, 139, 141, 0.1);
+  color: #16a34a;
+  background: rgba(34, 197, 94, 0.1);
   padding: 3px 9px;
   border-radius: 12px;
 }
@@ -334,7 +334,7 @@
 
 .visitor-bar {
   height: 100%;
-  background: linear-gradient(90deg, #0F8B8D, #22c5c7);
+  background: linear-gradient(90deg, #16a34a, #22c55e);
   border-radius: 4px;
   transition: width 0.6s ease;
 }
@@ -343,7 +343,7 @@
   width: 52px;
   font-size: 12px;
   font-weight: 700;
-  color: #0F8B8D;
+  color: #16a34a;
   text-align: right;
   flex-shrink: 0;
 }

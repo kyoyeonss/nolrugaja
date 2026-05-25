@@ -24,10 +24,10 @@
   transition: color 0.15s;
 }
 
-.nav-item:hover { color: #0F8B8D; }
+.nav-item:hover { color: #16a34a; }
 
 .nav-item.active {
-  color: #0F8B8D;
+  color: #16a34a;
 }
 
 .nav-icon {
